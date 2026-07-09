@@ -1,14 +1,7 @@
 import customtkinter as ctk
 from tkinter import ttk, messagebox
 
-from services.product_service import (
-    add_product,
-    get_products,
-    update_product,
-    delete_product,
-    search_product
-)
-
+from services.product_service import ProductService
 
 
 class SanPhamFrame(ctk.CTkFrame):
@@ -17,12 +10,24 @@ class SanPhamFrame(ctk.CTkFrame):
 
         super().__init__(master)
 
-        self.pack(fill="both", expand=True)
+        self.selected_code = None
 
+        self.grid_rowconfigure(1, weight=1)
+        self.grid_columnconfigure(0, weight=1)
 
-        # ======================
+        self.create_widgets()
+
+        self.load_products()
+
+    # =====================================================
+    # UI
+    # =====================================================
+
+    def create_widgets(self):
+
+        # ==========================
         # TITLE
-        # ======================
+        # ==========================
 
         title = ctk.CTkLabel(
             self,
@@ -30,316 +35,406 @@ class SanPhamFrame(ctk.CTkFrame):
             font=("Arial", 24, "bold")
         )
 
-        title.pack(
-            pady=15
-        )
-
-
-
-        # ======================
-        # FORM
-        # ======================
-
-        form = ctk.CTkFrame(self)
-
-        form.pack(
-            fill="x",
-            padx=20
-        )
-
-
-        self.code = self.create_input(
-            form,
-            "Mã SP"
-        )
-
-        self.name = self.create_input(
-            form,
-            "Tên SP"
-        )
-
-        self.price = self.create_input(
-            form,
-            "Giá"
-        )
-
-        self.stock = self.create_input(
-            form,
-            "Tồn kho"
-        )
-
-
-
-        # ======================
-        # BUTTON
-        # ======================
-
-
-        btn_frame = ctk.CTkFrame(
-            self
-        )
-
-        btn_frame.pack(
-            pady=10
-        )
-
-
-        ctk.CTkButton(
-            btn_frame,
-            text="➕ Thêm",
-            command=self.add
-        ).grid(
+        title.grid(
             row=0,
             column=0,
-            padx=5
+            padx=20,
+            pady=(15, 10),
+            sticky="w"
         )
 
+        # ==========================
+        # BODY
+        # ==========================
 
-        ctk.CTkButton(
-            btn_frame,
-            text="✏ Sửa",
-            command=self.edit
-        ).grid(
+        body = ctk.CTkFrame(self)
+
+        body.grid(
+            row=1,
+            column=0,
+            sticky="nsew",
+            padx=15,
+            pady=10
+        )
+
+        body.grid_columnconfigure(0, weight=0)
+        body.grid_columnconfigure(1, weight=1)
+        body.grid_rowconfigure(0, weight=1)
+
+        # ==========================
+        # LEFT
+        # ==========================
+
+        left = ctk.CTkFrame(body, width=320)
+
+        left.grid(
+            row=0,
+            column=0,
+            sticky="ns",
+            padx=(0, 15)
+        )
+
+        # --------------------------
+
+        ctk.CTkLabel(
+            left,
+            text="Mã sản phẩm"
+        ).pack(anchor="w", padx=15, pady=(15, 5))
+
+        self.ent_code = ctk.CTkEntry(left)
+
+        self.ent_code.pack(
+            fill="x",
+            padx=15
+        )
+
+        # --------------------------
+
+        ctk.CTkLabel(
+            left,
+            text="Tên sản phẩm"
+        ).pack(anchor="w", padx=15, pady=(15, 5))
+
+        self.ent_name = ctk.CTkEntry(left)
+
+        self.ent_name.pack(
+            fill="x",
+            padx=15
+        )
+
+        # --------------------------
+
+        ctk.CTkLabel(
+            left,
+            text="Giá bán"
+        ).pack(anchor="w", padx=15, pady=(15, 5))
+
+        self.ent_price = ctk.CTkEntry(left)
+
+        self.ent_price.pack(
+            fill="x",
+            padx=15
+        )
+
+        # --------------------------
+
+        ctk.CTkLabel(
+            left,
+            text="Tồn kho"
+        ).pack(anchor="w", padx=15, pady=(15, 5))
+
+        self.ent_stock = ctk.CTkEntry(left)
+
+        self.ent_stock.pack(
+            fill="x",
+            padx=15
+        )
+
+        # ==========================
+        # BUTTONS
+        # ==========================
+
+        self.btn_add = ctk.CTkButton(
+            left,
+            text="➕ Thêm",
+            command=self.add_product
+        )
+
+        self.btn_add.pack(
+            fill="x",
+            padx=15,
+            pady=(20, 5)
+        )
+
+        self.btn_update = ctk.CTkButton(
+            left,
+            text="✏️ Sửa",
+            command=self.update_product
+        )
+
+        self.btn_update.pack(
+            fill="x",
+            padx=15,
+            pady=5
+        )
+
+        self.btn_delete = ctk.CTkButton(
+            left,
+            text="🗑️ Xóa",
+            command=self.delete_product
+        )
+
+        self.btn_delete.pack(
+            fill="x",
+            padx=15,
+            pady=5
+        )
+
+        self.btn_refresh = ctk.CTkButton(
+            left,
+            text="🔄 Làm mới",
+            command=self.refresh
+        )
+
+        self.btn_refresh.pack(
+            fill="x",
+            padx=15,
+            pady=5
+        )
+
+        # ==========================
+        # RIGHT
+        # ==========================
+
+        right = ctk.CTkFrame(body)
+
+        right.grid(
             row=0,
             column=1,
-            padx=5
+            sticky="nsew"
         )
 
+        right.grid_rowconfigure(1, weight=1)
+        right.grid_columnconfigure(0, weight=1)
 
-        ctk.CTkButton(
-            btn_frame,
-            text="🗑 Xóa",
-            command=self.remove
-        ).grid(
-            row=0,
-            column=2,
-            padx=5
-        )
-
-
-
-        # ======================
+        # ==========================
         # SEARCH
-        # ======================
+        # ==========================
 
+        top = ctk.CTkFrame(right)
 
-        search_frame = ctk.CTkFrame(
-            self
-        )
-
-        search_frame.pack(
-            fill="x",
-            padx=20,
+        top.grid(
+            row=0,
+            column=0,
+            sticky="ew",
+            padx=10,
             pady=10
         )
 
+        top.grid_columnconfigure(0, weight=1)
 
-        self.keyword = ctk.CTkEntry(
-            search_frame,
-            placeholder_text="Tìm mã hoặc tên sản phẩm..."
+        self.ent_search = ctk.CTkEntry(
+            top,
+            placeholder_text="Tìm theo mã hoặc tên..."
         )
 
-        self.keyword.pack(
-            side="left",
-            fill="x",
-            expand=True
+        self.ent_search.grid(
+            row=0,
+            column=0,
+            sticky="ew",
+            padx=(0, 10)
         )
 
-
-        ctk.CTkButton(
-            search_frame,
-            text="🔎 Tìm",
-            command=self.search
-        ).pack(
-            side="left",
-            padx=5
+        self.btn_search = ctk.CTkButton(
+            top,
+            text="Tìm",
+            width=90,
+            command=self.search_product
         )
 
-
-
-        # ======================
-        # TABLE
-        # ======================
-
-
-        table_frame = ctk.CTkFrame(
-            self
+        self.btn_search.grid(
+            row=0,
+            column=1
         )
 
-        table_frame.pack(
-            fill="both",
-            expand=True,
-            padx=20,
-            pady=10
-        )
+        # ==========================
+        # TREEVIEW
+        # ==========================
 
+        tree_frame = ctk.CTkFrame(right)
+
+        tree_frame.grid(
+            row=1,
+            column=0,
+            sticky="nsew",
+            padx=10,
+            pady=(0, 10)
+        )
 
         columns = (
-            "id",
             "code",
             "name",
             "price",
             "stock"
         )
 
-
-        self.table = ttk.Treeview(
-            table_frame,
+        self.tree = ttk.Treeview(
+            tree_frame,
             columns=columns,
             show="headings"
         )
 
+        self.tree.heading("code", text="Mã SP")
+        self.tree.heading("name", text="Tên sản phẩm")
+        self.tree.heading("price", text="Giá")
+        self.tree.heading("stock", text="Tồn")
 
-        headings = {
+        self.tree.column("code", width=120)
+        self.tree.column("name", width=280)
+        self.tree.column("price", width=120, anchor="e")
+        self.tree.column("stock", width=80, anchor="center")
 
-            "id":"ID",
+        scrollbar = ttk.Scrollbar(
+            tree_frame,
+            orient="vertical",
+            command=self.tree.yview
+        )
 
-            "code":"Mã SP",
+        self.tree.configure(
+            yscrollcommand=scrollbar.set
+        )
 
-            "name":"Tên sản phẩm",
-
-            "price":"Giá",
-
-            "stock":"Tồn"
-
-        }
-
-
-        for col in columns:
-
-            self.table.heading(
-                col,
-                text=headings[col]
-            )
-
-            self.table.column(
-                col,
-                width=100
-            )
-
-
-        self.table.pack(
+        self.tree.pack(
+            side="left",
             fill="both",
             expand=True
         )
 
-
-        self.table.bind(
-            "<ButtonRelease-1>",
-            self.select_row
+        scrollbar.pack(
+            side="right",
+            fill="y"
         )
 
-
-        self.load_data()
-
-
-
-    # =================================
-    # CREATE INPUT
-    # =================================
-
-    def create_input(self, parent, text):
-
-        frame = ctk.CTkFrame(
-            parent
+        self.tree.bind(
+            "<<TreeviewSelect>>",
+            self.on_select
         )
+    # =====================================================
+    # LOAD PRODUCTS
+    # =====================================================
 
-        frame.pack(
-            side="left",
-            padx=10,
-            pady=10
-        )
+    def load_products(self):
 
+        # Xóa dữ liệu cũ
+        for item in self.tree.get_children():
+            self.tree.delete(item)
 
-        label = ctk.CTkLabel(
-            frame,
-            text=text
-        )
+        # Lấy dữ liệu
+        products = ProductService.get_all()
 
-        label.pack()
+        # Hiển thị
+        for product in products:
 
-
-        entry = ctk.CTkEntry(
-            frame,
-            width=150
-        )
-
-        entry.pack()
-
-
-        return entry
-
-
-
-    # =================================
-    # LOAD DATA
-    # =================================
-
-    def load_data(self):
-
-        for row in self.table.get_children():
-
-            self.table.delete(row)
-
-
-
-        products = get_products()
-
-
-        for p in products:
-
-            self.table.insert(
+            self.tree.insert(
                 "",
                 "end",
                 values=(
-
-                    p["id"],
-
-                    p["product_code"],
-
-                    p["name"],
-
-                    p["price"],
-
-                    p["stock"]
-
+                    product["product_code"],
+                    product["name"],
+                    f"{product['price']:,.0f}",
+                    product["stock"]
                 )
             )
 
+    # =====================================================
+    # REFRESH
+    # =====================================================
 
+    def refresh(self):
 
-    # =================================
-    # ADD
-    # =================================
+        self.clear_form()
 
+        self.load_products()
 
-    def add(self):
+    # =====================================================
+    # CLEAR FORM
+    # =====================================================
+
+    def clear_form(self):
+
+        self.selected_code = None
+
+        self.ent_code.configure(state="normal")
+
+        self.ent_code.delete(0, "end")
+        self.ent_name.delete(0, "end")
+        self.ent_price.delete(0, "end")
+        self.ent_stock.delete(0, "end")
+        self.ent_search.delete(0, "end")
+
+        # Sinh mã mới
+        self.ent_code.insert(
+            0,
+            ProductService.generate_product_code()
+        )
+
+    # =====================================================
+    # TREEVIEW SELECT
+    # =====================================================
+
+    def on_select(self, event=None):
+
+        selected = self.tree.selection()
+
+        if not selected:
+            return
+
+        item = self.tree.item(selected[0])
+
+        values = item["values"]
+
+        if not values:
+            return
+
+        code = values[0]
+
+        product = ProductService.get_by_code(code)
+
+        if product is None:
+            return
+
+        self.selected_code = code
+
+        self.ent_code.configure(state="normal")
+
+        self.ent_code.delete(0, "end")
+        self.ent_name.delete(0, "end")
+        self.ent_price.delete(0, "end")
+        self.ent_stock.delete(0, "end")
+
+        self.ent_code.insert(
+            0,
+            product["product_code"]
+        )
+
+        self.ent_name.insert(
+            0,
+            product["name"]
+        )
+
+        self.ent_price.insert(
+            0,
+            str(product["price"])
+        )
+
+        self.ent_stock.insert(
+            0,
+            str(product["stock"])
+        )
+
+        # Không cho sửa mã sản phẩm
+        self.ent_code.configure(state="disabled")
+    # =====================================================
+    # ADD PRODUCT
+    # =====================================================
+
+    def add_product(self):
 
         try:
 
-            add_product(
-
-                self.code.get(),
-
-                self.name.get(),
-
-                float(self.price.get()),
-
-                int(self.stock.get())
-
+            ProductService.add(
+                product_code=self.ent_code.get(),
+                name=self.ent_name.get(),
+                price=float(self.ent_price.get()),
+                stock=int(self.ent_stock.get())
             )
-
 
             messagebox.showinfo(
                 "Thông báo",
-                "Đã thêm sản phẩm"
+                "Thêm sản phẩm thành công."
             )
 
-
-            self.clear()
-
-            self.load_data()
-
+            self.refresh()
 
         except Exception as e:
 
@@ -348,32 +443,36 @@ class SanPhamFrame(ctk.CTkFrame):
                 str(e)
             )
 
+    # =====================================================
+    # UPDATE PRODUCT
+    # =====================================================
 
+    def update_product(self):
 
-    # =================================
-    # EDIT
-    # =================================
+        if self.selected_code is None:
 
+            messagebox.showwarning(
+                "Thông báo",
+                "Vui lòng chọn sản phẩm."
+            )
 
-    def edit(self):
+            return
 
         try:
 
-            update_product(
-
-                self.code.get(),
-
-                self.name.get(),
-
-                float(self.price.get()),
-
-                int(self.stock.get())
-
+            ProductService.update(
+                product_code=self.selected_code,
+                name=self.ent_name.get(),
+                price=float(self.ent_price.get()),
+                stock=int(self.ent_stock.get())
             )
 
+            messagebox.showinfo(
+                "Thông báo",
+                "Cập nhật thành công."
+            )
 
-            self.load_data()
-
+            self.refresh()
 
         except Exception as e:
 
@@ -382,136 +481,130 @@ class SanPhamFrame(ctk.CTkFrame):
                 str(e)
             )
 
+    # =====================================================
+    # DELETE PRODUCT
+    # =====================================================
 
+    def delete_product(self):
 
-    # =================================
-    # DELETE
-    # =================================
+        if self.selected_code is None:
 
-
-    def remove(self):
-
-        code = self.code.get()
-
-
-        if not code:
+            messagebox.showwarning(
+                "Thông báo",
+                "Vui lòng chọn sản phẩm."
+            )
 
             return
 
-
-        if messagebox.askyesno(
+        answer = messagebox.askyesno(
             "Xác nhận",
-            "Xóa sản phẩm này?"
-        ):
-
-
-            delete_product(
-                code
-            )
-
-
-            self.load_data()
-
-            self.clear()
-
-
-
-    # =================================
-    # SEARCH
-    # =================================
-
-
-    def search(self):
-
-        key = self.keyword.get()
-
-
-        for row in self.table.get_children():
-
-            self.table.delete(row)
-
-
-
-        products = search_product(
-            key
+            f"Bạn có muốn xóa sản phẩm\n{self.selected_code} ?"
         )
 
+        if not answer:
+            return
 
-        for p in products:
+        try:
 
-            self.table.insert(
+            ProductService.delete(
+                self.selected_code
+            )
+
+            messagebox.showinfo(
+                "Thông báo",
+                "Đã xóa sản phẩm."
+            )
+
+            self.refresh()
+
+        except Exception as e:
+
+            messagebox.showerror(
+                "Lỗi",
+                str(e)
+            )
+    # =====================================================
+    # SEARCH PRODUCT
+    # =====================================================
+
+    def search_product(self):
+
+        keyword = self.ent_search.get().strip()
+
+        if keyword == "":
+            self.load_products()
+            return
+
+        products = ProductService.search(keyword)
+
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+
+        for product in products:
+
+            self.tree.insert(
                 "",
                 "end",
                 values=(
-
-                    p["id"],
-                    p["product_code"],
-                    p["name"],
-                    p["price"],
-                    p["stock"]
-
+                    product["product_code"],
+                    product["name"],
+                    f"{product['price']:,.0f}",
+                    product["stock"]
                 )
             )
 
+    # =====================================================
+    # VALIDATE INPUT
+    # =====================================================
 
+    def validate_input(self):
 
-    # =================================
-    # SELECT TABLE ROW
-    # =================================
+        if self.ent_name.get().strip() == "":
+            raise ValueError("Tên sản phẩm không được để trống.")
 
+        try:
+            price = float(self.ent_price.get())
+        except ValueError:
+            raise ValueError("Giá bán không hợp lệ.")
 
-    def select_row(self,event):
+        if price < 0:
+            raise ValueError("Giá bán phải lớn hơn hoặc bằng 0.")
 
-        selected = self.table.selection()
+        try:
+            stock = int(self.ent_stock.get())
+        except ValueError:
+            raise ValueError("Tồn kho không hợp lệ.")
 
+        if stock < 0:
+            raise ValueError("Tồn kho phải lớn hơn hoặc bằng 0.")
 
-        if not selected:
+        return True
 
-            return
+    # =====================================================
+    # SHORTCUTS
+    # =====================================================
 
+    def bind_events(self):
 
-        data = self.table.item(
-            selected[0]
-        )["values"]
+        self.ent_search.bind(
+            "<Return>",
+            lambda e: self.search_product()
+        )
 
+        self.tree.bind(
+            "<Double-1>",
+            self.on_select
+        )
 
-        self.code.delete(0,"end")
-        self.code.insert(0,data[1])
+    # =====================================================
+    # INITIALIZE
+    # =====================================================
 
+    def initialize(self):
 
-        self.name.delete(0,"end")
-        self.name.insert(0,data[2])
+        self.clear_form()
 
+        self.load_products()
 
-        self.price.delete(0,"end")
-        self.price.insert(0,data[3])
-
-
-        self.stock.delete(0,"end")
-        self.stock.insert(0,data[4])
-
-
-
-    # =================================
-    # CLEAR
-    # =================================
-
-
-    def clear(self):
-
-        for item in [
-
-            self.code,
-
-            self.name,
-
-            self.price,
-
-            self.stock
-
-        ]:
-
-            item.delete(
-                0,
-                "end"
-            )
+        self.bind_events()
+        
